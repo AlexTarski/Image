@@ -3,24 +3,53 @@
 namespace Recognizer;
 internal static class SobelFilterTask
 {
-    public static double[,] SobelFilter(double[,] g, double[,] sx)
+    public static double[,] SobelFilter(double[,] image, double[,] lens)
     {
-        var width = g.GetLength(0);
-        var height = g.GetLength(1);
-        var result = new double[width, height];
-        for (int x = 1; x < width - 1; x++)
-            for (int y = 1; y < height - 1; y++)
+        int rows = image.GetLength(0);
+        int cols = image.GetLength(1);
+        var result = new double[rows, cols];
+        int midPix = lens.GetLength(0) / 2;
+        var sy = Transpose(lens);
+        for (int x = midPix; x < rows - midPix; x++)
+            for (int y = midPix; y < cols - midPix; y++)
             {
-                // Вместо этого кода должно быть поэлементное умножение матриц sx и полученной транспонированием из неё sy на окрестность точки (x, y)
-                // Такая операция ещё называется свёрткой (Сonvolution)
-                var gx = 
-                    -g[x - 1, y - 1] - 2 * g[x, y - 1] - g[x + 1, y - 1] 
-                    + g[x - 1, y + 1] + 2 * g[x, y + 1] + g[x + 1, y + 1];
-                var gy = 
-                    -g[x - 1, y - 1] - 2 * g[x - 1, y] - g[x - 1, y + 1] 
-                    + g[x + 1, y - 1] + 2 * g[x + 1, y] + g[x + 1, y + 1];
+                var gx = ToConvolute(image, lens, x - midPix, y - midPix);
+                var gy = ToConvolute(image, sy, x - midPix, y - midPix);
                 result[x, y] = Math.Sqrt(gx * gx + gy * gy);
             }
         return result;
+    }
+
+    static double ToConvolute(double[,] g, double[,] s, int indexX, int indexY)
+    {
+        int side = s.GetLength(0);
+        double result = 0;
+        for (int x = 0; x < side; x++)
+        {
+            for (int y = 0; y < side; y++)
+            {
+                result += s[x, y] * g[x + indexX, y + indexY];
+            }
+        }
+        return result;
+    }
+
+    static double[,] Transpose(double[,] sx)
+    {
+        int width = sx.GetLength(0);
+        int height = sx.GetLength(1);
+        double[,] sy = new double[width, height];
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (x == y) sy[x, y] = sx[x, y];
+                else
+                {
+                    sy[x, y] = sx[y, x];
+                }
+            }
+        }
+        return sy;
     }
 }
